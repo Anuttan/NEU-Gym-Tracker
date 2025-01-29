@@ -1,9 +1,9 @@
 name: Scrape NEU Gym Occupancy
 
 on:
-  push:  # Trigger on push
+  push:  # Trigger on push events
     branches:
-      - main 
+      - main
 
   schedule:
     # Monday (5:30 AM - midnight)
@@ -11,27 +11,27 @@ on:
     - cron: '30 5 * * 1'      # 5:30 AM run
     
     # Tuesday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 2'    # Every hour from 6 AM to 11 PM
-    - cron: '30 5 * * 2'      # 5:30 AM run
+    - cron: '0 6-23 * * 2'
+    - cron: '30 5 * * 2'
     
     # Wednesday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 3'    # Every hour from 6 AM to 11 PM
-    - cron: '30 5 * * 3'      # 5:30 AM run
+    - cron: '0 6-23 * * 3'
+    - cron: '30 5 * * 3'
     
     # Thursday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 4'    # Every hour from 6 AM to 11 PM
-    - cron: '30 5 * * 4'      # 5:30 AM run
+    - cron: '0 6-23 * * 4'
+    - cron: '30 5 * * 4'
     
     # Friday (5:30 AM - 9 PM)
-    - cron: '0 6-20 * * 5'    # Every hour from 6 AM to 8 PM
-    - cron: '30 5 * * 5'      # 5:30 AM run
+    - cron: '0 6-20 * * 5'
+    - cron: '30 5 * * 5'
     
     # Saturday (8 AM - 9 PM)
-    - cron: '0 8-20 * * 6'    # Every hour from 8 AM to 8 PM
+    - cron: '0 8-20 * * 6'
     
-    # Sunday (8 AM - midnight & 10 AM - midnight)
-    - cron: '0 8-23 * * 0'    # Every hour from 8 AM to 11 PM
-  
+    # Sunday (8 AM - midnight)
+    - cron: '0 8-23 * * 0'
+
   workflow_dispatch:  # Allows manual triggers
 
 jobs:
@@ -39,20 +39,23 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
+    - name: Checkout repository
+      uses: actions/checkout@v4  # Updated version
+
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
     - name: Install Chrome
       run: |
-        wget -q -O /tmp/chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_109.0.5414.74-1_amd64.deb
-        sudo apt install -y /tmp/chrome.deb 
-        rm /tmp/chrome.deb
-    
+        sudo apt-get update
+        sudo apt-get install -y wget curl unzip
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -60,8 +63,8 @@ jobs:
     
     - name: Configure Git
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
     
     - name: Run scraper
       run: python scraper.py
@@ -70,4 +73,4 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GIT_TOKEN }}
-        branch: ${{ github.ref }}
+        branch: main
