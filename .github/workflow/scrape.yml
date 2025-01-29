@@ -1,6 +1,10 @@
 name: Scrape NEU Gym Occupancy
 
 on:
+  push:  # Trigger on push
+    branches:
+      - main 
+
   schedule:
     # Monday (5:30 AM - midnight)
     - cron: '0 6-23 * * 1'    # Every hour from 6 AM to 11 PM
