@@ -63,32 +63,39 @@ def setup_selenium():
     return driver
 
 def parse_facility_data(text_content):
+    """
+    Parse the facility counts from the text content.
+    """
     facilities = []
     lines = text_content.split('\n')
     current_facility = {}
 
     for line in lines:
-        if '%' in line:
-            if current_facility:
+        line = line.strip()
+
+        if '%' in line:  # Occupancy percentage
+            if current_facility and 'name' in current_facility:
                 facilities.append(current_facility)
                 print(f"🔹 Parsed facility: {current_facility}")  # Debugging output
-            current_facility = {'occupancy_percentage': int(line.strip('%'))}
+            current_facility = {'occupancy_percentage': int(re.search(r'(\d+)%', line).group(1))}
 
         count_match = re.search(r'Last Count: (\d+)', line)
         if count_match:
             current_facility['count'] = int(count_match.group(1))
 
-        if '(Open)' in line or '(Closed)' in line:
-            name_parts = line.split('(')
-            if len(name_parts) > 1:
-                current_facility['name'] = name_parts[0].strip()
-                current_facility['status'] = '(' + name_parts[1]
+        if '(Open)' in line or '(Closed)' in line:  # Extract facility name and status
+            name_match = re.match(r"(.+?)\s*\((Open|Closed)\)", line)
+            if name_match:
+                current_facility['name'] = name_match.group(1).strip()
+                current_facility['status'] = f"({name_match.group(2)})"
 
-        if 'Updated:' in line:
-            timestamp_str = line.split('Updated:')[1].strip()
-            current_facility['last_updated'] = timestamp_str
+        if 'Updated:' in line:  # Extract last updated timestamp
+            timestamp_match = re.search(r'Updated:\s*(.*)', line)
+            if timestamp_match:
+                current_facility['last_updated'] = timestamp_match.group(1).strip()
 
-    if current_facility:
+    # Append last parsed facility
+    if current_facility and 'name' in current_facility:
         facilities.append(current_facility)
         print(f"🔹 Parsed facility (final): {current_facility}")  # Debugging output
 
@@ -114,6 +121,9 @@ def scrape_gym_occupancy(url):
         driver.quit()
 
 def update_csv(facilities_data, filename='data/gym_occupancy.csv'):
+    """
+    Update the CSV file with new data.
+    """
     current_time = datetime.now()
     
     os.makedirs('data', exist_ok=True)
@@ -126,26 +136,26 @@ def update_csv(facilities_data, filename='data/gym_occupancy.csv'):
 
     timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    filtered_facilities = [
-        facility for facility in facilities_data if 'name' in facility and is_facility_open(facility['name'], current_time)
-    ]
-    
-    if not filtered_facilities:
-        print("⚠️ No facilities passed the open-hours check. CSV will remain empty.")
-    else:
-        print(f"✅ Writing {len(filtered_facilities)} facilities to CSV.")
+    print(f"🔎 Checking facilities for open hours:")
+    for facility in facilities_data:
+        print(f"➡️ Facility: {facility}")  # Debugging output
+        if 'name' in facility and is_facility_open(facility['name'], current_time):
+            print(f"✅ {facility['name']} is open!")  # Debugging output
+        else:
+            print(f"❌ {facility['name']} is closed.")  # Debugging output
 
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
-        for facility in filtered_facilities:
-            writer.writerow([
-                timestamp,
-                facility.get('name', 'Unknown'),
-                facility.get('count', 0),
-                facility.get('occupancy_percentage', 0),
-                facility.get('status', 'Unknown'),
-                facility.get('last_updated', 'Unknown')
-            ])
+        for facility in facilities_data:
+            if 'name' in facility and is_facility_open(facility['name'], current_time):
+                writer.writerow([
+                    timestamp,
+                    facility['name'],
+                    facility.get('count', 0),
+                    facility.get('occupancy_percentage', 0),
+                    facility.get('status', 'Unknown'),
+                    facility.get('last_updated', 'Unknown')
+                ])
 
 def commit_changes():
     """
