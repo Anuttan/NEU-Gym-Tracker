@@ -63,8 +63,8 @@ jobs:
     
     - name: Configure Git
       run: |
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+        git config --global user.email "RepsAndCommits@users.noreply.github.com"
+        git config --global user.name "RepsAndCommits"
     
     - name: Run scraper
       run: python scraper.py

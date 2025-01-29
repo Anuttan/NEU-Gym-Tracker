@@ -63,9 +63,6 @@ def setup_selenium():
     return driver
 
 def parse_facility_data(text_content):
-    """
-    Parse the facility counts from the text content.
-    """
     facilities = []
     lines = text_content.split('\n')
     current_facility = {}
@@ -74,6 +71,7 @@ def parse_facility_data(text_content):
         if '%' in line:
             if current_facility:
                 facilities.append(current_facility)
+                print(f"🔹 Parsed facility: {current_facility}")  # Debugging output
             current_facility = {'occupancy_percentage': int(line.strip('%'))}
 
         count_match = re.search(r'Last Count: (\d+)', line)
@@ -92,7 +90,9 @@ def parse_facility_data(text_content):
 
     if current_facility:
         facilities.append(current_facility)
+        print(f"🔹 Parsed facility (final): {current_facility}")  # Debugging output
 
+    print(f"✅ Total facilities parsed: {len(facilities)}")  # Debugging output
     return facilities
 
 def scrape_gym_occupancy(url):
@@ -114,9 +114,6 @@ def scrape_gym_occupancy(url):
         driver.quit()
 
 def update_csv(facilities_data, filename='data/gym_occupancy.csv'):
-    """
-    Update the CSV file with new data.
-    """
     current_time = datetime.now()
     
     os.makedirs('data', exist_ok=True)
@@ -128,18 +125,27 @@ def update_csv(facilities_data, filename='data/gym_occupancy.csv'):
                              'status', 'last_updated'])
 
     timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    filtered_facilities = [
+        facility for facility in facilities_data if 'name' in facility and is_facility_open(facility['name'], current_time)
+    ]
+    
+    if not filtered_facilities:
+        print("⚠️ No facilities passed the open-hours check. CSV will remain empty.")
+    else:
+        print(f"✅ Writing {len(filtered_facilities)} facilities to CSV.")
+
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
-        for facility in facilities_data:
-            if 'name' in facility and is_facility_open(facility['name'], current_time):
-                writer.writerow([
-                    timestamp,
-                    facility.get('name', 'Unknown'),
-                    facility.get('count', 0),
-                    facility.get('occupancy_percentage', 0),
-                    facility.get('status', 'Unknown'),
-                    facility.get('last_updated', 'Unknown')
-                ])
+        for facility in filtered_facilities:
+            writer.writerow([
+                timestamp,
+                facility.get('name', 'Unknown'),
+                facility.get('count', 0),
+                facility.get('occupancy_percentage', 0),
+                facility.get('status', 'Unknown'),
+                facility.get('last_updated', 'Unknown')
+            ])
 
 def commit_changes():
     """
@@ -159,12 +165,6 @@ def main():
     try:
         url = "https://recreation.northeastern.edu/"
         facilities_data = scrape_gym_occupancy(url)
-
-        if not facilities_data:
-            print("⚠️ No facilities data was scraped. Check if the webpage structure has changed.")
-        else:
-            print(f"✅ Scraped {len(facilities_data)} facilities: {facilities_data}")
-
         if facilities_data:
             update_csv(facilities_data)
             commit_changes()
