@@ -29,3 +29,6 @@ timestamp,facility,count,occupancy_percentage,status,last_updated
 2025-01-29 12:29:14,Unknown,0,0,Unknown,1/29/2025
 2025-01-29 12:29:14,SquashBusters - 4th Floor,28,47,(Open),01/29/2025 06:59 AM
 2025-01-29 12:29:14,Marino Center - Studio A,5,15,(Open),01/29/2025 07:06 AM
+2025-01-29 13:20:47,Unknown,0,0,Unknown,1/29/2025
+2025-01-29 13:20:47,SquashBusters - 4th Floor,28,47,(Open),01/29/2025 08:01 AM
+2025-01-29 13:20:47,Marino Center - Studio A,2,6,(Open),01/29/2025 07:58 AM
