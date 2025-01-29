@@ -3,6 +3,7 @@ import re
 import csv
 import asyncio
 import pdfplumber
+import git
 from datetime import datetime
 from pyppeteer import launch
 
@@ -117,7 +118,19 @@ def update_csv(facilities_data, filename=CSV_PATH):
             ])
     print(f"Data written to CSV: {filename}")
 
-# Step 5: Run the Full Scraper
+def commit_and_push_changes():
+    """
+    Commits and pushes the CSV file to the GitHub repository.
+    """
+    try:
+        repo = git.Repo(".")
+        repo.git.add(CSV_PATH)  # Explicitly add the CSV file
+        repo.index.commit(f"Update gym occupancy data - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        repo.remote(name="origin").push()
+        print("Changes committed and pushed to GitHub.")
+    except Exception as e:
+        print(f"Error committing changes: {e}")
+
 def main():
     try:
         print("Starting Gym Occupancy Scraper...")
@@ -147,10 +160,14 @@ def main():
         # Step 4: Update CSV
         update_csv(facilities_data)
 
+        # Step 5: Commit and push changes
+        commit_and_push_changes()
+
         print("Scraper execution completed successfully.")
 
     except Exception as e:
         print(f"Error in main execution: {e}")
+
 
 if __name__ == "__main__":
     main()

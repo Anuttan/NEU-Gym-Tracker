@@ -6,11 +6,14 @@ on:
       - main
 
   schedule:
-    - cron: '0 6-23 * * 1-5'  # Monday to Friday: Every hour from 6 AM to 11 PM
-    - cron: '0 8-20 * * 6'  # Saturday: Every hour from 8 AM to 8 PM
-    - cron: '0 8-23 * * 0'  # Sunday: Every hour from 8 AM to 11 PM
+    - cron: '0 6-23 * * 1-5'  # Monday to Friday
+    - cron: '0 8-20 * * 6'  # Saturday
+    - cron: '0 8-23 * * 0'  # Sunday
 
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   scrape:
@@ -19,6 +22,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        persist-credentials: true
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -36,5 +41,5 @@ jobs:
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.GIT_TOKEN }}
         branch: main
