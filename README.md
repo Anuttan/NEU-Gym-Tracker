@@ -20,7 +20,6 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 - Automated hourly collection during operating hours
 - Data stored directly in repository as CSV
 
-
 ## Setup
 
 1. Clone this repository:
@@ -31,7 +30,7 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 
 2. Create necessary directories:
    ```bash
-   mkdir -p .github/workflows
+   mkdir -p .github/workflows data
    ```
 
 3. Copy required files:
@@ -48,16 +47,16 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 
 ## Data Format
 
-The collected data is stored in `data/gym_occupancy.csv` with the following columns:
+The collected data is stored in `data/facility_data.csv` with the following columns:
 
 | Column              | Description                           |
 |--------------------|----------------------------------|
-| `timestamp`        | Time of data collection          |
-| `facility`        | Name of the facility            |
-| `count`           | Number of people present        |
-| `occupancy_percentage` | Percentage of capacity      |
+| `timestamp_utc`    | Time of data collection in UTC    |
+| `location`        | Name of the facility            |
+| `last_count`      | Number of people present        |
 | `status`          | Facility status (Open/Closed)   |
-| `last_updated`    | Last recorded update            |
+| `is_closed`       | Boolean indicating closure status |
+| `updated`         | Last recorded update            |
 
 ## Project Structure
 
@@ -109,4 +108,3 @@ Open an issue in this repository if you have any questions or encounter problems
 
 ---
 Made with ❤️ for Huskies
-
