@@ -7,8 +7,8 @@ on:
 
   schedule:
     - cron: '0 6-23 * * 1-5'  # Monday to Friday
-    - cron: '0 8-20 * * 6'  # Saturday
-    - cron: '0 8-23 * * 0'  # Sunday
+    - cron: '0 8-20 * * 6'    # Saturday
+    - cron: '0 8-23 * * 0'    # Sunday
 
   workflow_dispatch:
 
