@@ -21,7 +21,7 @@ def save_webpage_as_pdf(url, output_pdf):
     """
     Uses Selenium to open the webpage and print it as a PDF.
     """
-    print("🚀 Launching Selenium to save webpage as PDF...")
+    print("Launching Selenium to save webpage as PDF...")
     
     chrome_options = Options()
     chrome_options.add_argument("--headless")
