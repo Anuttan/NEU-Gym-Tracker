@@ -150,36 +150,6 @@ def commit_changes():
     except Exception as e:
         print(f"Error committing changes: {e}")
 
-def extract_and_print_text_from_pdf(pdf_path):
-    """
-    Extracts all text from the PDF and prints each line with an index.
-    """
-    text_content = ""
-
-    print("\nExtracting text from PDF...\n")
-    if not os.path.exists(pdf_path):
-        print(f"PDF file {pdf_path} not found!")
-        return ""
-
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text_content += page.extract_text() + "\n"
-
-    if text_content.strip():
-        print("Successfully extracted text from PDF.\n")
-    else:
-        print("No text extracted. The PDF may be empty or improperly formatted.\n")
-
-    print("Full Extracted Text (Indexed):\n")
-    lines = text_content.split('\n')
-
-    for i, line in enumerate(lines):
-        print(f"[{i}] {line}")
-
-    print("\n--- End of Extracted Text ---\n")
-    
-    return text_content
-
 # Step 6: Run the Full Scraper
 def main():
     try:
@@ -194,7 +164,7 @@ def main():
             return
 
         # Step 2: Extract text from the PDF
-        pdf_text = extract_and_print_text_from_pdf(PDF_PATH)
+        pdf_text = extract_text_from_pdf(PDF_PATH)
 
         if not pdf_text.strip():
             print("No text extracted. Exiting.")
