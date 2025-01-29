@@ -1,28 +1,4 @@
 timestamp,facility,count,occupancy_percentage,status,last_updated
-2025-01-29 05:43:21,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 05:43:21,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 05:43:21,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 05:58:22,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 05:58:22,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 05:58:22,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 06:14:39,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 06:14:39,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 06:14:39,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 06:20:41,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 06:20:41,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 06:20:41,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 07:13:51,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 07:13:51,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 07:13:51,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 08:19:24,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 08:19:24,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 08:19:24,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 09:15:31,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 09:15:31,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 09:15:31,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
-2025-01-29 10:15:47,Unknown,0,0,Unknown,1/29/2025
-2025-01-29 10:15:47,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
-2025-01-29 10:15:47,Marino Center - Studio A,8,24,(Open),01/28/2025 11:17 PM
 2025-01-29 11:12:20,Unknown,0,0,Unknown,1/29/2025
 2025-01-29 11:12:20,SquashBusters - 4th Floor,18,30,(Open),01/28/2025 11:31 PM
 2025-01-29 11:12:20,Marino Center - Studio A,0,0,(Open),01/29/2025 06:01 AM
