@@ -5,6 +5,8 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Anuttan/neu-gym-tracker/scrape.yml?label=Scraping%20Job)
 ![Dataset Updated](https://img.shields.io/badge/dataset-updated%20hourly-brightgreen)
 
+![NEU Gym Tracker](assets/husky_gym.png)
+
 ## Features
 
 - Real-time tracking of all NEU recreation facilities:
