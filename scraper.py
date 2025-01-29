@@ -64,15 +64,16 @@ def parse_extracted_text(text_content):
     """
     facilities = []
     lines = text_content.split('\n')
+    current_facility = {}
 
     print("Parsing extracted text...")
-    current_facility = {}
 
     for line in lines:
         line = line.strip()
         print(f"Processing line: {line}")
 
-        if '%' in line:  # Extract occupancy percentage
+        # Match Occupancy Percentage
+        if '%' in line:
             match = re.search(r'(\d+)%', line)
             if match:
                 if current_facility and 'name' in current_facility:
@@ -80,17 +81,20 @@ def parse_extracted_text(text_content):
                     print(f"Parsed facility: {current_facility}")
                 current_facility = {'occupancy_percentage': int(match.group(1))}
 
+        # Match Last Count
         count_match = re.search(r'Last Count: (\d+)', line)
         if count_match:
             current_facility['count'] = int(count_match.group(1))
 
-        if '(Open)' in line or '(Closed)' in line:  # Extract facility name and status
+        # Match Facility Name and Status
+        if '(Open)' in line or '(Closed)' in line:
             name_match = re.match(r"(.+?)\s*\((Open|Closed)\)", line)
             if name_match:
                 current_facility['name'] = name_match.group(1).strip()
                 current_facility['status'] = f"({name_match.group(2)})"
 
-        if 'Updated:' in line:  # Extract last updated timestamp
+        # Match Last Updated Time
+        if 'Updated:' in line:
             timestamp_match = re.search(r'Updated:\s*(.*)', line)
             if timestamp_match:
                 current_facility['last_updated'] = timestamp_match.group(1).strip()
@@ -101,6 +105,7 @@ def parse_extracted_text(text_content):
 
     print(f"Total facilities parsed: {len(facilities)}")
     return facilities
+
 
 # Step 4: Save Data to CSV
 def update_csv(facilities_data, filename=CSV_PATH):
@@ -145,6 +150,36 @@ def commit_changes():
     except Exception as e:
         print(f"Error committing changes: {e}")
 
+def extract_and_print_text_from_pdf(pdf_path):
+    """
+    Extracts all text from the PDF and prints each line with an index.
+    """
+    text_content = ""
+
+    print("\nExtracting text from PDF...\n")
+    if not os.path.exists(pdf_path):
+        print(f"PDF file {pdf_path} not found!")
+        return ""
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text_content += page.extract_text() + "\n"
+
+    if text_content.strip():
+        print("Successfully extracted text from PDF.\n")
+    else:
+        print("No text extracted. The PDF may be empty or improperly formatted.\n")
+
+    print("Full Extracted Text (Indexed):\n")
+    lines = text_content.split('\n')
+
+    for i, line in enumerate(lines):
+        print(f"[{i}] {line}")
+
+    print("\n--- End of Extracted Text ---\n")
+    
+    return text_content
+
 # Step 6: Run the Full Scraper
 def main():
     try:
@@ -159,7 +194,7 @@ def main():
             return
 
         # Step 2: Extract text from the PDF
-        pdf_text = extract_text_from_pdf(PDF_PATH)
+        pdf_text = extract_and_print_text_from_pdf(PDF_PATH)
 
         if not pdf_text.strip():
             print("No text extracted. Exiting.")
