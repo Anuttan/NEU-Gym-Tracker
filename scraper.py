@@ -1,149 +1,165 @@
-import os
-import re
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 import csv
-import asyncio
-import pdfplumber
-import git
+import os
 from datetime import datetime
-from pyppeteer import launch
 
-# Constants
-URL = "https://recreation.northeastern.edu/"
-PDF_PATH = "gym_occupancy.pdf"
+PARENT_URL = "https://recreation.northeastern.edu"
 CSV_PATH = "data/gym_occupancy.csv"
 
-# Step 1: Generate PDF
-async def save_webpage_as_pdf(url, output_pdf):
-    """Save a webpage as a PDF using Pyppeteer."""
-    print("Launching headless Chrome to save webpage as PDF...")
-    browser = await launch(headless=True, args=["--no-sandbox"])
-    page = await browser.newPage()
-    await page.goto(url, {"waitUntil": "networkidle2"})
-    await page.pdf({"path": output_pdf, "format": "A4"})
-    await browser.close()
-    print(f"Webpage saved as PDF: {output_pdf}")
 
-def generate_pdf(url, output_pdf):
-    asyncio.get_event_loop().run_until_complete(save_webpage_as_pdf(url, output_pdf))
+def get_iframe_url(parent_url):
+    """
+    Fetches the parent page and attempts to find the iframe
+    pointing to widget (or whichever domain).
+    Returns the absolute URL of that iframe, or None if not found.
+    """
+    resp = requests.get(parent_url)
+    resp.raise_for_status()
 
-# Step 2: Extract Text from PDF
-def extract_text_from_pdf(pdf_path):
-    """Extract all text from the PDF."""
-    if not os.path.exists(pdf_path):
-        print(f"PDF file {pdf_path} not found!")
-        return ""
+    soup = BeautifulSoup(resp.text, 'html.parser')
 
-    print("Extracting text from PDF...")
-    text_content = ""
-    with pdfplumber.open(pdf_path) as pdf:
-        text_content = "\n".join(page.extract_text() or "" for page in pdf.pages)
-    return text_content
+    # Example: look for any <iframe> whose src contains widget
+    iframe = soup.find('iframe', src=lambda x: x and "connect2mycloud.com" in x)
+    if not iframe:
+        return None
 
-# Step 3: Parse Extracted Text
-def parse_extracted_text(text_content):
-    """Parse extracted text to retrieve gym occupancy data."""
-    facilities = []
-    current_facility = {}
-    lines = text_content.split('\n')
+    iframe_src = iframe['src']
+    # Make sure it's an absolute URL
+    absolute_url = urljoin(parent_url, iframe_src)
+    return absolute_url
 
-    print("Parsing extracted text...")
-    for i, line in enumerate(lines):
-        line = line.strip()
-        if re.match(r'^\d+%$', line):  # Matches percentage (e.g., "30%")
-            if current_facility:
-                facilities.append(current_facility)
-                print(f"Captured facility: {current_facility}")
-            current_facility = {'occupancy_percentage': int(line.strip('%'))}
-        elif 'Last Count:' in line:  # Matches "Last Count: 18"
-            count_match = re.search(r'Last Count: (\d+)', line)
-            if count_match:
-                current_facility['count'] = int(count_match.group(1))
-        elif '(Open)' in line or '(Closed)' in line:  # Matches facility name + status
-            current_facility['name'] = lines[i-1].strip()  # Facility name is the line above
-            current_facility['status'] = line.strip()
-        elif 'Updated:' in line:  # Matches "Updated: 01/28/2025 11:31 PM"
-            timestamp_match = re.search(r'Updated:\s*(.*)', line)
-            if timestamp_match:
-                current_facility['last_updated'] = timestamp_match.group(1).strip()
 
-    if current_facility:
-        facilities.append(current_facility)
-        print(f"Captured facility: {current_facility}")
+def scrape_widget(iframe_url):
+    """
+    Scrapes the HTML from the widget iframe URL
+    and extracts each location's occupancy info.
+    Returns a list of dicts with the data.
+    """
+    resp = requests.get(iframe_url)
+    resp.raise_for_status()
 
-    print(f"Total facilities parsed: {len(facilities)}")
-    return facilities
+    soup = BeautifulSoup(resp.text, 'html.parser')
+    
+    # Each location is inside <div class="col-md-3 col-sm-6">
+    blocks = soup.select('div.col-md-3.col-sm-6')
 
-# Step 4: Save Data to CSV
-def update_csv(facilities_data, filename=CSV_PATH):
-    """Update the CSV file with new occupancy data."""
-    current_time = datetime.now()
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    results = []
+    for block in blocks:
+        # The circleChart div has data attributes like data-percent, data-lastcount, data-isclosed
+        circle_div = block.select_one('div.circleChart')
+        if not circle_div:
+            continue
 
-    if not os.path.exists(filename):
-        with open(filename, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['timestamp', 'facility', 'count', 'occupancy_percentage', 'status', 'last_updated'])
+        data_percent = circle_div.get('data-percent', '0')
+        data_lastcount = circle_div.get('data-lastcount', '0')
+        data_isclosed = circle_div.get('data-isclosed', 'false')
 
-    timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
-    print("Writing data to CSV...")
-    with open(filename, 'a', newline='') as f:
+        # The text block (centered div) typically has location name, status, last count, etc.
+        text_div = block.select_one('div[style="text-align:center;"]')
+        if not text_div:
+            continue
+
+        # Extract text lines
+        lines = list(text_div.stripped_strings)
+        # Example lines:
+        # [
+        #   "Marino Center - Studio A",
+        #   "(Open)",
+        #   "Last Count: 8",
+        #   "Updated: 01/29/2025 09:26 AM"
+        # ]
+
+        if len(lines) < 4:
+            continue
+
+        location = lines[0]
+        status_str = lines[1]  # e.g., "(Open)"
+        status_clean = status_str.strip("()")  # remove parentheses
+
+        last_count_str = lines[2].replace("Last Count: ", "")
+        updated_str = lines[3].replace("Updated: ", "")
+
+        # Convert numeric fields
+        try:
+            percent_val = float(data_percent)
+        except ValueError:
+            percent_val = None
+
+        # last_count might be integer or float
+        try:
+            last_count_val = int(last_count_str)
+        except ValueError:
+            try:
+                last_count_val = float(last_count_str)
+            except ValueError:
+                last_count_val = None
+
+        is_closed = (data_isclosed.lower() == 'true')
+
+        row = {
+            "location": location,
+            "status": status_clean,       # e.g., "Open" or "Closed"
+            "is_closed": is_closed,       
+            "percent": percent_val,       # e.g., 45.0
+            "last_count": last_count_val, # e.g., 27
+            "updated": updated_str        # "01/29/2025 09:01 AM"
+        }
+        results.append(row)
+
+    return results
+
+
+def append_to_csv(results, csv_path=CSV_PATH):
+    """
+    Appends the scraped location results to a CSV file (csv_path),
+    one row per location, with a timestamp for each scrape.
+    """
+    # Ensure the data/ directory exists
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+
+    file_exists = os.path.isfile(csv_path)
+    timestamp_utc = datetime.utcnow().isoformat()
+
+    with open(csv_path, mode='a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        for facility in facilities_data:
+        if not file_exists:
+            # Write header if CSV does not exist yet
             writer.writerow([
-                timestamp,
-                facility.get('name', 'Unknown'),
-                facility.get('count', 0),
-                facility.get('occupancy_percentage', 0),
-                facility.get('status', 'Unknown'),
-                facility.get('last_updated', 'Unknown')
+                "timestamp_utc",
+                "location",
+                "percent",
+                "last_count",
+                "status",
+                "is_closed",
+                "updated"
             ])
-    print(f"Data written to CSV: {filename}")
+        
+        for row in results:
+            writer.writerow([
+                timestamp_utc,
+                row.get("location", ""),
+                row.get("percent", ""),
+                row.get("last_count", ""),
+                row.get("status", ""),
+                row.get("is_closed", ""),
+                row.get("updated", "")
+            ])
 
-# Step 5: Commit and Push Changes
-def commit_and_push_changes():
-    """Commit and push the CSV file to the GitHub repository."""
-    try:
-        repo = git.Repo(".")
-        repo.git.add(CSV_PATH)
-        repo.index.commit(f"Update gym occupancy data - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        repo.remote(name="origin").push()
-        print("Changes committed and pushed to GitHub.")
-    except Exception as e:
-        print(f"Error committing changes: {e}")
 
-# Main Function
 def main():
-    """Main function to execute the scraper."""
-    try:
-        print("Starting Gym Occupancy Scraper...")
+    # 1. Find the widget iframe URL from the parent site
+    iframe_url = get_iframe_url(PARENT_URL)
+    if not iframe_url:
+        print("WARNING: Could not find the widget iframe on the parent page.")
+        return
 
-        # Step 1: Generate PDF
-        generate_pdf(URL, PDF_PATH)
-        if not os.path.exists(PDF_PATH):
-            print("PDF was not created. Exiting.")
-            return
+    results = scrape_widget(iframe_url)
+    append_to_csv(results, CSV_PATH)
 
-        # Step 2: Extract text from the PDF
-        pdf_text = extract_text_from_pdf(PDF_PATH)
-        if not pdf_text.strip():
-            print("No text extracted. Exiting.")
-            return
+    print(f"Appended {len(results)} rows to {CSV_PATH}.")
 
-        # Step 3: Parse extracted text
-        facilities_data = parse_extracted_text(pdf_text)
-        if not facilities_data:
-            print("No facility data extracted. Exiting.")
-            return
-
-        # Step 4: Update CSV
-        update_csv(facilities_data)
-
-        # Step 5: Commit and push changes
-        commit_and_push_changes()
-
-        print("Scraper execution completed successfully.")
-    except Exception as e:
-        print(f"Error in main execution: {e}")
 
 if __name__ == "__main__":
     main()
