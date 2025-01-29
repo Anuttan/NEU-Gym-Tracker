@@ -1,76 +1,40 @@
 name: Scrape NEU Gym Occupancy
 
 on:
-  push:  # Trigger on push events
+  push:
     branches:
       - main
 
   schedule:
-    # Monday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 1'    # Every hour from 6 AM to 11 PM
-    - cron: '30 5 * * 1'      # 5:30 AM run
-    
-    # Tuesday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 2'
-    - cron: '30 5 * * 2'
-    
-    # Wednesday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 3'
-    - cron: '30 5 * * 3'
-    
-    # Thursday (5:30 AM - midnight)
-    - cron: '0 6-23 * * 4'
-    - cron: '30 5 * * 4'
-    
-    # Friday (5:30 AM - 9 PM)
-    - cron: '0 6-20 * * 5'
-    - cron: '30 5 * * 5'
-    
-    # Saturday (8 AM - 9 PM)
-    - cron: '0 8-20 * * 6'
-    
-    # Sunday (8 AM - midnight)
-    - cron: '0 8-23 * * 0'
+    - cron: '0 6-23 * * 1-5'  # Monday to Friday: Every hour from 6 AM to 11 PM
+    - cron: '0 8-20 * * 6'  # Saturday: Every hour from 8 AM to 8 PM
+    - cron: '0 8-23 * * 0'  # Sunday: Every hour from 8 AM to 11 PM
 
-  workflow_dispatch:  # Allows manual triggers
+  workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4  # Updated version
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
-    - name: Install Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget curl unzip
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-            pip install selenium webdriver_manager gitpython pdfplumber
-    
-    - name: Configure Git
-      run: |
-        git config --global user.email "RepsAndCommits@users.noreply.github.com"
-        git config --global user.name "RepsAndCommits"
-    
+        pip install selenium webdriver_manager gitpython pdfplumber pyppeteer
+
     - name: Run scraper
       run: python scraper.py
-    
+
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.GIT_TOKEN }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: main

@@ -3,13 +3,10 @@ import time
 import re
 import csv
 import git
+import asyncio
 import pdfplumber
-
-from datetime import datetime, time as dtime
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from datetime import datetime
+from pyppeteer import launch
 
 # Constants
 URL = "https://recreation.northeastern.edu/"
@@ -17,34 +14,25 @@ PDF_PATH = "gym_occupancy.pdf"
 CSV_PATH = "data/gym_occupancy.csv"
 
 # Step 1: Save Webpage as PDF
-def save_webpage_as_pdf(url, output_pdf):
+async def save_webpage_as_pdf(url, output_pdf):
     """
-    Uses Selenium to open the webpage and print it as a PDF.
+    Uses Pyppeteer (Headless Chrome) to save a webpage as a PDF.
     """
-    print("Launching Selenium to save webpage as PDF...")
-    
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--kiosk-printing")  # Enable headless printing
+    print("Launching headless Chrome to save webpage as PDF...")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    browser = await launch(headless=True, args=["--no-sandbox"])
+    page = await browser.newPage()
+    await page.goto(url, {"waitUntil": "networkidle2"})  # Ensure full page load
 
-    try:
-        driver.get(url)
-        time.sleep(5)  # Allow page to load
+    # Save the page as a PDF
+    await page.pdf({"path": output_pdf, "format": "A4"})
 
-        driver.execute_script("window.print();")  # Simulate "Print to PDF"
-        print(f"Webpage saved as PDF: {output_pdf}")
-    
-    except Exception as e:
-        print(f"Error saving webpage as PDF: {e}")
-    
-    finally:
-        driver.quit()
+    await browser.close()
+    print(f"Webpage saved as PDF: {output_pdf}")
+
+# Wrapper function to run async function in a synchronous script
+def generate_pdf(url, output_pdf):
+    asyncio.get_event_loop().run_until_complete(save_webpage_as_pdf(url, output_pdf))
 
 # Step 2: Extract Text from PDF
 def extract_text_from_pdf(pdf_path):
@@ -52,17 +40,21 @@ def extract_text_from_pdf(pdf_path):
     Extracts all text from the PDF.
     """
     text_content = ""
-    
+
     print("Extracting text from PDF...")
+    if not os.path.exists(pdf_path):
+        print(f"PDF file {pdf_path} not found!")
+        return ""
+
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text_content += page.extract_text() + "\n"
-    
+
     if text_content.strip():
         print("Successfully extracted text from PDF.")
     else:
-        print("No text extracted! The PDF may be empty or improperly formatted.")
-    
+        print("No text extracted. The PDF may be empty or improperly formatted.")
+
     return text_content
 
 # Step 3: Parse Extracted Text
@@ -78,7 +70,7 @@ def parse_extracted_text(text_content):
 
     for line in lines:
         line = line.strip()
-        print(f"Line: {line}")  # Debug output
+        print(f"Processing line: {line}")
 
         if '%' in line:  # Extract occupancy percentage
             match = re.search(r'(\d+)%', line)
@@ -157,9 +149,14 @@ def commit_changes():
 def main():
     try:
         print("Starting the Gym Occupancy Scraper...")
-        
+
         # Step 1: Save webpage as PDF
-        save_webpage_as_pdf(URL, PDF_PATH)
+        generate_pdf(URL, PDF_PATH)
+
+        # Verify if the PDF was actually created
+        if not os.path.exists(PDF_PATH):
+            print("PDF was not created. Exiting.")
+            return
 
         # Step 2: Extract text from the PDF
         pdf_text = extract_text_from_pdf(PDF_PATH)
@@ -181,7 +178,7 @@ def main():
         # Step 5: Commit & Push Changes
         commit_changes()
 
-        print("Scraper execution completed successfully!")
+        print("Scraper execution completed successfully.")
 
     except Exception as e:
         print(f"Error in main execution: {e}")
