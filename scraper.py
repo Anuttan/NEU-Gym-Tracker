@@ -159,6 +159,12 @@ def main():
     try:
         url = "https://recreation.northeastern.edu/"
         facilities_data = scrape_gym_occupancy(url)
+
+        if not facilities_data:
+            print("⚠️ No facilities data was scraped. Check if the webpage structure has changed.")
+        else:
+            print(f"✅ Scraped {len(facilities_data)} facilities: {facilities_data}")
+
         if facilities_data:
             update_csv(facilities_data)
             commit_changes()
