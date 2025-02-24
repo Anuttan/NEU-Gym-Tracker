@@ -39,12 +39,15 @@ jobs:
           pip install playwright
           playwright install
 
-      - name: Run scraper
-        run: python scraper.py
+      - name: Run scraper and visualizer
+        run: |
+          python scraper.py
+          python visual.py
 
       - name: Commit and push if changed
         run: |
           git config --global user.name 'RepsAndCommits'
           git config --global user.email 'RepsAndCommits@github.com'
+          git add plots/gym_occupancy_analysis.png
           git add data/facility_data.csv
           git diff --quiet && git diff --staged --quiet || (git commit -m 'Update facility data' && git push)

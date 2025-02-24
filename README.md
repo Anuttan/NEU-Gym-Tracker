@@ -20,6 +20,14 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 - Automated hourly collection during operating hours
 - Data stored directly in repository as CSV
 
+## Live Feed
+
+![Gym Occupancy Analysis](assets/gym_occupancy_analysis_boston.png)
+
+> **Note**  
+> You can generate and update this plot by running your local analysis script. Just make sure to commit the updated `.png` if you want to display the latest results in your README.
+
+
 ## Setup
 
 1. Clone this repository:
@@ -68,6 +76,7 @@ The collected data is stored in `data/facility_data.csv` with the following colu
 ├── data/
 │   └── gym_occupancy.csv  # Collected data
 ├── scraper.py             # Main scraping script
+├── visual.py              # Visual creation script
 └── README.md
 ```
 
@@ -81,6 +90,11 @@ pip install selenium webdriver_manager gitpython pdfplumber pyppeteer
 Run the scraper locally:
 ```bash
 python scraper.py
+```
+
+Run the visualiser locally:
+```bash
+python visual.py
 ```
 
 ## Contributing
