@@ -25,10 +25,10 @@ jobs:
         
         # Inline Python command to remove duplicates
         python -c "
-            import pandas as pd
-            df = pd.read_csv('data/facility_data.csv')
-            df = df.drop_duplicates()
-            df.to_csv('data/facility_data.csv', index=False)
+        import pandas as pd
+        df = pd.read_csv('data/facility_data.csv')
+        df = df.drop_duplicates()
+        df.to_csv('data/facility_data.csv', index=False)
         "
 
     - name: Commit and push changes
