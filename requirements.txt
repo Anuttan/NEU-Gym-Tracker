@@ -1,1 +1,4 @@
 playwright>=1.30.0
+pandas
+matplotlib
+seaborn
