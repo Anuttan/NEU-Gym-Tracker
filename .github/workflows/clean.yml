@@ -1,0 +1,48 @@
+name: Clean CSV of Duplicates
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean-csv:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Remove duplicates
+      run: |
+        pip install pandas
+        
+        # Inline Python command to remove duplicates
+        python -c "
+            import pandas as pd
+            df = pd.read_csv('data/facility_data.csv')
+            df = df.drop_duplicates()
+            df.to_csv('data/facility_data.csv', index=False)
+        "
+
+    - name: Commit and push changes
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        
+        # Stage the updated CSV
+        git add data/facility_data.csv
+        
+        # Only commit if there are changes
+        if git diff --cached --quiet; then
+          echo 'No duplicates removed. No changes to commit.'
+        else
+          git commit -m "Remove duplicates from facility_data.csv"
+          git push
+        fi
