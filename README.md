@@ -22,7 +22,7 @@ Automated system to track and analyze occupancy levels at Northeastern Universit
 
 ## Live Feed
 
-![Gym Occupancy Analysis](assets/gym_occupancy_analysis_boston.png)
+![Gym Occupancy Analysis](assets\gym_occupancy_analysis.png)
 
 > **Note**  
 > You can generate and update this plot by running your local analysis script. Just make sure to commit the updated `.png` if you want to display the latest results in your README.
